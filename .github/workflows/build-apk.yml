@@ -21,9 +21,15 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Generate Gradle Wrapper Silently
-      # Projeyi derlemeye çalışmadan, sadece güncel bir Gradle sürümü ile gradlew dosyalarını üretmesini sağlıyoruz
-      run: gradle wrapper --gradle-version 8.2 --distribution-type bin
+    - name: Generate Gradle Wrapper Safely
+      # Proje dosyalarını tetiklemeden, boş bir geçici klasörde wrapper dosyalarını üretip ana dizine taşıyoruz
+      run: |
+        mkdir temp_gradle_wrapper && cd temp_gradle_wrapper
+        gradle wrapper --gradle-version 8.2 --distribution-type bin
+        cp gradlew ..
+        cp gradlew.bat ..
+        cp -r gradle ..
+        cd .. && rm -rf temp_gradle_wrapper
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
