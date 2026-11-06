@@ -21,13 +21,34 @@ jobs:
         distribution: 'temurin'
 
     - name: Setup Gradle
-      # Bu resmi aksiyon, projenizin ihtiyaç duyduğu doğru Gradle sürümünü otomatik olarak ayarlar
       uses: gradle/actions/setup-gradle@v4
 
     - name: Build with Gradle
-      # Global gradle yerine doğrudan aksiyonun optimize ettiği komutu tetikliyoruz
-      run: gradle assembleDebug
-
+      # Eklenti depolarını ve Kotlin sürümünü parametre olarak sunucuya zorla kabul ettiriyoruz
+      run: |
+        gradle assembleDebug \
+          -Pandroid.useAndroidX=true \
+          -Dgradle.user.home=.gradle \
+          --init-script <(cat << 'EOF'
+        allprojects {
+            buildscript {
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+                dependencies {
+                    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22")
+                    classpath("com.android.tools.build:gradle:8.2.2")
+                }
+            }
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        EOF
+        )
+        
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
