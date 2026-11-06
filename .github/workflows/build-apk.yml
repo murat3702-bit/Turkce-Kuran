@@ -26,18 +26,13 @@ jobs:
         channel: 'stable'
 
     - name: Install dependencies
-      # BURAYI DEĞİŞTİRİN: alt_klasor_adi yerine kendi klasörünüzün adını yazın
-      working-directory: alt_klasor_adi 
       run: flutter pub get
 
     - name: Build APK
-      # BURAYI DEĞİŞTİRİN: alt_klasor_adi yerine kendi klasörünüzün adını yazın
-      working-directory: alt_klasor_adi 
       run: flutter build apk --release
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: release-apk
-        # BURAYI DEĞİŞTİRİN: alt_klasor_adi kısmını kendi klasörünüzle güncelleyin
-        path: alt_klasor_adi/build/app/outputs/flutter-apk/app-release.apk
+        path: build/app/outputs/flutter-apk/app-release.apk
