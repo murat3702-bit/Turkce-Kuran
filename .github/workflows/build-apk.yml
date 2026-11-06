@@ -23,10 +23,25 @@ jobs:
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
 
-    - name: Create Isolated Init Script
-      # Betiği komut satırında çalıştırmak yerine fiziksel bir dosyaya yazıyoruz
+    - name: Create Safe Init Script
+      # RepositoriesMode engeline takılmamak için depoları settings düzeyinde enjekte ediyoruz
       run: |
         cat << 'EOF' > init.gradle
+        settingsEvaluated { settings ->
+            settings.pluginManagement {
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+            }
+            settings.dependencyResolutionManagement {
+                repositories {
+                    google()
+                    mavenCentral()
+                }
+            }
+        }
+        
         allprojects {
             buildscript {
                 repositories {
@@ -38,15 +53,10 @@ jobs:
                     classpath("com.android.tools.build:gradle:8.2.2")
                 }
             }
-            repositories {
-                google()
-                mavenCentral()
-            }
         }
         EOF
 
     - name: Build with Gradle
-      # Fiziksel dosyayı güvenli parametreyle Gradle'a gönderiyoruz
       run: |
         gradle assembleDebug \
           -Pandroid.useAndroidX=true \
