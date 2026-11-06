@@ -19,26 +19,14 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
 
-    - name: Inject Gradle Wrapper Scripts
-      # Sunucuda komut çalıştırmak yerine gradlew dosyalarını doğrudan metin olarak oluşturuyoruz
-      run: |
-        cat << 'EOF' > gradlew
-        #!/bin/sh
-        exec gradle "$@"
-        EOF
-        
-        cat << 'EOF' > gradlew.bat
-        @rem Injected Wrapper
-        gradle %*
-        EOF
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
+    - name: Setup Gradle
+      # Bu resmi aksiyon, projenizin ihtiyaç duyduğu doğru Gradle sürümünü otomatik olarak ayarlar
+      uses: gradle/actions/setup-gradle@v4
 
     - name: Build with Gradle
-      run: ./gradlew assembleDebug
+      # Global gradle yerine doğrudan aksiyonun optimize ettiği komutu tetikliyoruz
+      run: gradle assembleDebug
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
