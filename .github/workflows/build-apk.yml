@@ -21,15 +21,18 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Generate Gradle Wrapper Outside Project
-      # Dosyaları proje dizininin tamamen dışındaki /tmp klasöründe üretip buraya taşıyoruz
+    - name: Inject Gradle Wrapper Scripts
+      # Sunucuda komut çalıştırmak yerine gradlew dosyalarını doğrudan metin olarak oluşturuyoruz
       run: |
-        cd /tmp
-        mkdir ext_wrapper && cd ext_wrapper
-        gradle wrapper --gradle-version 8.2 --distribution-type bin
-        cp gradlew $GITHUB_WORKSPACE/
-        cp gradlew.bat $GITHUB_WORKSPACE/
-        cp -r gradle $GITHUB_WORKSPACE/
+        cat << 'EOF' > gradlew
+        #!/bin/sh
+        exec gradle "$@"
+        EOF
+        
+        cat << 'EOF' > gradlew.bat
+        @rem Injected Wrapper
+        gradle %*
+        EOF
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
