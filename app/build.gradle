@@ -6,8 +6,11 @@ android {
         applicationId 'com.kuranmealleri'
         minSdk 24
         targetSdk 34
-        versionCode 5
-        versionName '5'
+        // Her değişiklikte SADECE bu sayıyı +1 artırın; versionName ve
+        // Hakkında ekranındaki "Ver N" yazısı otomatik güncellenir.
+        def appVersion = 10
+        versionCode appVersion
+        versionName "${appVersion}"
     }
     buildTypes { release { minifyEnabled false } }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
