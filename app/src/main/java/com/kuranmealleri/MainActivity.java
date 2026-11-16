@@ -54,6 +54,14 @@ public class MainActivity extends Activity {
                 });
             }
         }, "AndroidTheme");
+        web.addJavascriptInterface(new Object() {
+            @JavascriptInterface
+            public String version() {
+                try {
+                    return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
+                } catch (Exception e) { return ""; }
+            }
+        }, "AndroidApp");
         web.setWebViewClient(new WebViewClient());
         if (state == null) web.loadUrl("file:///android_asset/index.html");
         else web.restoreState(state);
