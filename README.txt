@@ -5,6 +5,8 @@ Derleme:
 2) Gradle Sync bitince Build > Build APK(s) veya Run ile derleyin.
    (İlk açılışta Gradle sürümü için onay isterse kabul edin.)
 
+Sürüm: app/build.gradle içindeki appVersion değerini her değişiklikte +1 artırın (Hakkında yazısı otomatik güncellenir).
+
 Arayüz: app/src/main/assets/index.html (tek dosya, 8 meal verisi içinde).
 Uygulama adı: res/values/strings.xml, simge: res/drawable/ic_launcher.xml
 applicationId: com.kuranmealleri
