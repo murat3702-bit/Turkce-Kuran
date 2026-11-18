@@ -1,9 +1,9 @@
 plugins { id 'com.android.application' }
 android {
-    namespace 'com.kuranmealleri'
+    namespace 'com.mb.turkcekuran.app'
     compileSdk 34
     defaultConfig {
-        applicationId 'com.kuranmealleri'
+        applicationId 'com.mb.turkcekuran.app'
         minSdk 24
         targetSdk 34
         // Her değişiklikte SADECE bu sayıyı +1 artırın; versionName ve
