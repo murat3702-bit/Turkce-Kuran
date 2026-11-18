@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -22,6 +23,14 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
+
+    - name: Akıllı VersionCode Artır
+      run: |
+        FILE=$([ -f app/build.gradle.kts ] && echo "app/build.gradle.kts" || echo "app/build.gradle")
+        CURRENT=$(grep -oE 'versionCode[ =]+[0-9]+' "$FILE" | grep -oE '[0-9]+' | head -n 1)
+        NEW_CODE=$((CURRENT + ${{ github.run_number }}))
+        sed -i -E "s/(versionCode[ =]+)[0-9]+/\1$NEW_CODE/" "$FILE"
+        echo "Yeni versionCode: $NEW_CODE"
 
     - name: Create Safe Init Script
       # RepositoriesMode engeline takılmamak için depoları settings düzeyinde enjekte ediyoruz
@@ -56,15 +65,29 @@ jobs:
         }
         EOF
 
-    - name: Build with Gradle
+    - name: Build Release APK with Gradle
       run: |
-        gradle assembleDebug \
+        gradle assembleRelease \
           -Pandroid.useAndroidX=true \
           -Dgradle.user.home=.gradle \
-          --init-script init.gradle
+          --init-script init.gradle \
+          --no-daemon
+
+    - name: Sign Release APK
+      run: |
+        echo "${{ secrets.SIGNING_KEY }}" | base64 -d > release-key.jks
+        BUILD_TOOLS=$(find $ANDROID_HOME/build-tools -maxdepth 1 -mindepth 1 | sort -V | tail -n 1)
+        $BUILD_TOOLS/zipalign -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk app-release-aligned.apk
+        $BUILD_TOOLS/apksigner sign \
+          --ks release-key.jks \
+          --ks-key-alias "${{ secrets.ALIAS }}" \
+          --ks-pass "pass:${{ secrets.KEY_STORE_PASSWORD }}" \
+          --key-pass "pass:${{ secrets.KEY_PASSWORD }}" \
+          --out app-release-signed.apk \
+          app-release-aligned.apk
         
-    - name: Upload APK Artifact
+    - name: Upload Signed APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: app-debug-apk
-        path: app/build/outputs/apk/debug/app-debug.apk
+        name: app-release-signed
+        path: app-release-signed.apk
