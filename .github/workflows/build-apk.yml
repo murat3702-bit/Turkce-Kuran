@@ -15,6 +15,30 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    - name: Kalıcı +1 Sürüm Artır ve Kaydet
+      run: |
+        FILE=$([ -f app/build.gradle.kts ] && echo "app/build.gradle.kts" || echo "app/build.gradle")
+        
+        # 1. versionCode değerini +1 artırır
+        CURRENT_CODE=$(grep -oE 'versionCode[ =]+[0-9]+' "$FILE" | grep -oE '[0-9]+' | head -n 1)
+        NEW_CODE=$((CURRENT_CODE + 1))
+        sed -i -E "s/(versionCode[ =]+)[0-9]+/\1$NEW_CODE/" "$FILE"
+        
+        # 2. versionName son hanesini +1 artırır (2.10 -> 2.11 -> 2.12)
+        CURRENT_NAME=$(grep -oE 'versionName[ =]+"[^"]+"' "$FILE" | sed -E 's/.*"([^"]+)".*/\1/' | head -n 1)
+        PREFIX=$(echo "$CURRENT_NAME" | sed -E 's/[0-9]+$//')
+        LAST_NUM=$(echo "$CURRENT_NAME" | grep -oE '[0-9]+$')
+        NEW_LAST=$((LAST_NUM + 1))
+        NEW_NAME="${PREFIX}${NEW_LAST}"
+        sed -i -E "s/(versionName[ =]+\")[^\"]+\"/\1$NEW_NAME\"/" "$FILE"
+        
+        # 3. Yeni sürümü depoya kalıcı olarak kaydeder
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add "$FILE"
+        git commit -m "Sürüm otomatik artırıldı: $NEW_NAME [skip ci]"
+        git push
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -23,14 +47,6 @@ jobs:
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v4
-
-    - name: Akıllı VersionCode Artır
-      run: |
-        FILE=$([ -f app/build.gradle.kts ] && echo "app/build.gradle.kts" || echo "app/build.gradle")
-        CURRENT=$(grep -oE 'versionCode[ =]+[0-9]+' "$FILE" | grep -oE '[0-9]+' | head -n 1)
-        NEW_CODE=$((CURRENT + ${{ github.run_number }}))
-        sed -i -E "s/(versionCode[ =]+)[0-9]+/\1$NEW_CODE/" "$FILE"
-        echo "Yeni versionCode: $NEW_CODE"
 
     - name: Create Safe Init Script
       # RepositoriesMode engeline takılmamak için depoları settings düzeyinde enjekte ediyoruz
@@ -75,7 +91,7 @@ jobs:
 
     - name: Sign Release APK
       run: |
-        echo "${{ secrets.SIGNING_KEY }}" | base64 -d > release-key.jks
+        echo "${{ secrets.SIGNING_KEY }}" | base64 -di > release-key.jks
         BUILD_TOOLS=$(find $ANDROID_HOME/build-tools -maxdepth 1 -mindepth 1 | sort -V | tail -n 1)
         $BUILD_TOOLS/zipalign -v -p 4 app/build/outputs/apk/release/app-release-unsigned.apk app-release-aligned.apk
         $BUILD_TOOLS/apksigner sign \
