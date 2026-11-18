@@ -17,15 +17,26 @@ jobs:
 
     - name: Kalıcı +1 Sürüm Artır ve Kaydet
       run: |
-        CURRENT=$(grep -oE 'def appVersion = [0-9]+' app/build.gradle | grep -oE '[0-9]+')
-        NEW_VER=$((CURRENT + 1))
-        sed -i "s/def appVersion = [0-9]*/def appVersion = $NEW_VER/" app/build.gradle
-        echo "Yeni Uygulama Sürümü: $NEW_VER"
+        # 1. versionCode değerini +1 artırır
+        CURRENT_CODE=$(grep -oE 'versionCode[ =]+[0-9]+' app/build.gradle | grep -oE '[0-9]+' | head -n 1)
+        NEW_CODE=$((CURRENT_CODE + 1))
+        sed -i -E "s/(versionCode[ =]+)[0-9]+/\1$NEW_CODE/" app/build.gradle
 
+        # 2. versionName son hanesini +1 artırır (2.10 -> 2.11 -> 2.12)
+        CURRENT_NAME=$(grep -oE "versionName[ =]+['\"][^'\"]+['\"]" app/build.gradle | sed -E "s/.*['\"]([^'\"]+)['\"].*/\1/" | head -n 1)
+        PREFIX=$(echo "$CURRENT_NAME" | sed -E 's/[0-9]+$//')
+        LAST_NUM=$(echo "$CURRENT_NAME" | grep -oE '[0-9]+$')
+        NEW_LAST=$((LAST_NUM + 1))
+        NEW_NAME="${PREFIX}${NEW_LAST}"
+        sed -i -E "s/(versionName[ =]+['\"])[^'\"]+(['\"])/\1$NEW_NAME\2/" app/build.gradle
+
+        echo "Yeni Sürüm -> versionCode: $NEW_CODE | versionName: $NEW_NAME"
+
+        # 3. Yeni sürümü depoya kalıcı olarak kaydeder
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add app/build.gradle
-        git commit -m "Sürüm otomatik artırıldı: $NEW_VER [skip ci]"
+        git commit -m "Sürüm otomatik artırıldı: $NEW_NAME [skip ci]"
         git push
 
     - name: Set up JDK 17
