@@ -8,7 +8,7 @@ android {
         targetSdk 34
         // Her değişiklikte SADECE bu sayıyı +1 artırın; versionName ve
         // Hakkında ekranındaki "Ver N" yazısı otomatik güncellenir.
-        def appVersion = 10
+        def appVersion = 11
         versionCode appVersion
         versionName "${appVersion}"
     }
