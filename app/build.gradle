@@ -6,7 +6,7 @@ android {
         applicationId 'com.mb.turkcekuran.app'
         minSdk 24
         targetSdk 34
-        versionCode 13
+        versionCode 1
         versionName "2.12"
     }
     buildTypes { release { minifyEnabled false } }
