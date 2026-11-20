@@ -107,3 +107,4 @@ jobs:
       with:
         name: app-release-signed
         path: app-release-signed.apk
+        retention-days: 3
