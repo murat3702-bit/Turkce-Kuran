@@ -10,12 +10,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        persist-credentials: true
 
     - name: Kalıcı +1 Sürüm Artır ve Kaydet
+      id: version
+      if: github.event_name != 'pull_request'
       run: |
         # 1. versionCode değerini +1 artırır
         CURRENT_CODE=$(grep -oE 'versionCode[ =]+[0-9]+' app/build.gradle | grep -oE '[0-9]+' | head -n 1)
@@ -31,6 +37,7 @@ jobs:
         sed -i -E "s/(versionName[ =]+['\"])[^'\"]+(['\"])/\1$NEW_NAME\2/" app/build.gradle
 
         echo "Yeni Sürüm -> versionCode: $NEW_CODE | versionName: $NEW_NAME"
+        echo "new_name=$NEW_NAME" >> $GITHUB_OUTPUT
 
         # 3. Yeni sürümü depoya kalıcı olarak kaydeder
         git config --local user.email "action@github.com"
@@ -99,12 +106,13 @@ jobs:
           --ks-key-alias "${{ secrets.ALIAS }}" \
           --ks-pass "pass:${{ secrets.KEY_STORE_PASSWORD }}" \
           --key-pass "pass:${{ secrets.KEY_PASSWORD }}" \
-          --out app-release-signed.apk \
+          --out app-v${{ steps.version.outputs.new_name }}-release-signed.apk \
           app-release-aligned.apk
-        
-    - name: Upload Signed APK Artifact
-      uses: actions/upload-artifact@v4
+
+    - name: Release Signed APK
+      if: github.event_name != 'pull_request'
+      uses: softprops/action-gh-release@v2
       with:
-        name: app-release-signed
-        path: app-release-signed.apk
-        retention-days: 3
+        tag_name: v${{ steps.version.outputs.new_name }}
+        name: Release v${{ steps.version.outputs.new_name }}
+        files: app-v${{ steps.version.outputs.new_name }}-release-signed.apk
