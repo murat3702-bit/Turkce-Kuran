@@ -11,7 +11,8 @@
 @media(prefers-color-scheme:dark){:root:not([data-theme=light]):not([data-theme=sepia]):not([data-theme=amoled]){--bg:#10171a;--card:#182125;--tx:#e4e9e6;--mu:#8a9a96;--ac:#4fc3a9;--ac2:#1d3a36;--ln:#26333a;--rs-bg:linear-gradient(135deg,#1b2d2d 0%,#162226 100%);--rs-bd:#2f6459;--rs-sh:0 6px 18px rgba(0,0,0,.4);--rs-ring:rgba(79,195,169,.4);--rs-trk:rgba(79,195,169,.2);--rs-btn:#4fc3a9;--rs-btn-tx:#07211c;--rs-btn-sh:rgba(79,195,169,.25);--rs-shine:rgba(255,255,255,.4);color-scheme:dark}}
 :root[data-theme=dark]{--bg:#10171a;--card:#182125;--tx:#e4e9e6;--mu:#8a9a96;--ac:#4fc3a9;--ac2:#1d3a36;--ln:#26333a;--rs-bg:linear-gradient(135deg,#1b2d2d 0%,#162226 100%);--rs-bd:#2f6459;--rs-sh:0 6px 18px rgba(0,0,0,.4);--rs-ring:rgba(79,195,169,.4);--rs-trk:rgba(79,195,169,.2);--rs-btn:#4fc3a9;--rs-btn-tx:#07211c;--rs-btn-sh:rgba(79,195,169,.25);--rs-shine:rgba(255,255,255,.4);color-scheme:dark}
 :root[data-theme=amoled]{--bg:#000000;--card:#000000;--tx:#d9dedb;--mu:#7f8b87;--ac:#4fc3a9;--ac2:#10201d;--ln:#20292c;--rs-bg:linear-gradient(135deg,#07100e 0%,#000000 100%);--rs-bd:#2f7a6a;--rs-sh:0 0 0 1px rgba(79,195,169,.15);--rs-ring:rgba(79,195,169,.5);--rs-trk:#1c2a27;--rs-btn:#4fc3a9;--rs-btn-tx:#00120e;--rs-btn-sh:rgba(79,195,169,.2);--rs-shine:rgba(255,255,255,.45);color-scheme:dark}
-*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea{-webkit-user-select:text;user-select:text}
 html{width:100%;max-width:100%;overflow-x:hidden;touch-action:pan-y;overscroll-behavior-x:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:calc(env(safe-area-inset-top,0px) + 120px)}
 body{touch-action:pan-y;margin:0;width:100%;max-width:100%;min-width:0;background:var(--bg);color:var(--tx);font:16px/1.5 Comfortaa,system-ui,sans-serif;overflow-wrap:anywhere;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
 img,svg,video,canvas{max-width:100%}
@@ -169,6 +170,11 @@ document.addEventListener('click',e=>{if(e.target.closest('main')&&$('pn').class
   cp(`${D.names[S.last][0]} ${n} — ${t}`)}});
 let oy=0,ig=0;addEventListener('scroll',()=>{if(scrollX)scrollTo(0,scrollY);if(Date.now()<ig){oy=scrollY;return}if(Math.abs(scrollY-oy)>80)$('pn').classList.remove('open')},{passive:true});
 addEventListener('change',e=>{if(e.target.id=='ms'){S.meal=e.target.value;save();route()}});
+
+/* Uzun basmayla metin seçimi / bağlam menüsü kapalı (yalnızca yazılabilir alanlar hariç) */
+const okSel=t=>{const e=t&&t.nodeType==1?t:t&&t.parentElement;return !!(e&&e.closest('input,textarea'))};
+['selectstart','contextmenu'].forEach(ev=>document.addEventListener(ev,e=>{if(!okSel(e.target))e.preventDefault()}));
+document.addEventListener('dragstart',e=>e.preventDefault());
 
 /* ===== Dipnot bottom sheet ===== */
 let dnOpen=false;const sh=$('sh'),shp=$('shp'),shg=$('shg');
