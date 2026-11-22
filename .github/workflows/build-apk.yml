@@ -10,23 +10,24 @@ on:
     - cron: '0 3 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
-    # Zamanlanmış (schedule) çalışmada gereksiz yere APK derlemesini önler
-    if: github.event_name != 'schedule'
+  build-and-clean:
+    name: Build Signed APK and Clean Old Releases
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
     - name: Checkout repository
+      if: github.event_name != 'schedule'
       uses: actions/checkout@v4
       with:
         persist-credentials: true
 
     - name: Kalıcı +1 Sürüm Artır ve Kaydet
       id: version
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'schedule' && github.event_name != 'pull_request'
       run: |
         # 1. versionCode değerini +1 artırır
         CURRENT_CODE=$(grep -oE 'versionCode[ =]+[0-9]+' app/build.gradle | grep -oE '[0-9]+' | head -n 1)
@@ -52,15 +53,20 @@ jobs:
         git push
 
     - name: Set up JDK 17
+      if: github.event_name != 'schedule'
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
     - name: Setup Gradle
+      if: github.event_name != 'schedule'
       uses: gradle/actions/setup-gradle@v4
+      with:
+        cache-disabled: true
 
     - name: Create Safe Init Script
+      if: github.event_name != 'schedule'
       # RepositoriesMode engeline takılmamak için depoları settings düzeyinde enjekte ediyoruz
       run: |
         cat << 'EOF' > init.gradle
@@ -94,14 +100,17 @@ jobs:
         EOF
 
     - name: Build Release APK with Gradle
+      if: github.event_name != 'schedule'
       run: |
         gradle assembleRelease \
           -Pandroid.useAndroidX=true \
           -Dgradle.user.home=.gradle \
           --init-script init.gradle \
-          --no-daemon
+          --no-daemon \
+          --no-build-cache
 
     - name: Sign Release APK
+      if: github.event_name != 'schedule'
       run: |
         echo "${{ secrets.SIGNING_KEY }}" | base64 -di > release-key.jks
         BUILD_TOOLS=$(find $ANDROID_HOME/build-tools -maxdepth 1 -mindepth 1 | sort -V | tail -n 1)
@@ -115,32 +124,25 @@ jobs:
           app-release-aligned.apk
 
     - name: Release Signed APK
-      if: github.event_name != 'pull_request'
+      if: github.event_name != 'schedule' && github.event_name != 'pull_request'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ steps.version.outputs.new_name }}
         name: Release v${{ steps.version.outputs.new_name }}
         files: app-v${{ steps.version.outputs.new_name }}-release-signed.apk
 
-  cleanup-releases:
-    name: 1 Günden Eski Release'leri Sil
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    - name: 24 Saatten Eski Sürümleri ve Tag'leri Temizle
+      if: always() && github.event_name != 'pull_request'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        CUTOFF=$(date -u -d '1 day ago' +%Y-%m-%dT%H:%M:%SZ)
+        echo "Kesim tarihi (UTC): $CUTOFF"
 
-    steps:
-      - name: 24 Saatten Eski Sürümleri ve Tag'leri Temizle
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          CUTOFF=$(date -u -d '1 day ago' +%Y-%m-%dT%H:%M:%SZ)
-          echo "Kesim tarihi (UTC): $CUTOFF"
-
-          gh release list --repo "${{ github.repository }}" --limit 100 --json tagName,createdAt \
-            --jq ".[] | select(.createdAt < \"$CUTOFF\") | .tagName" | while read -r TAG; do
-              if [ -n "$TAG" ]; then
-                echo "Siliniyor: $TAG"
-                gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag
-              fi
-            done
+        gh release list --repo "${{ github.repository }}" --limit 100 --json tagName,createdAt \
+          --jq ".[] | select(.createdAt < \"$CUTOFF\") | .tagName" | while read -r TAG; do
+            if [ -n "$TAG" ]; then
+              echo "Siliniyor: $TAG"
+              gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag
+            fi
+          done
