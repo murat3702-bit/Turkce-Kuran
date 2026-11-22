@@ -80,6 +80,10 @@ input{display:block;width:100%;max-width:100%;padding:11px 14px;border-radius:12
 .sh-b{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:6px 18px 24px;font:400 var(--df,18px)/1.7 Comfortaa,system-ui,sans-serif}
 .dn-i{margin:0;padding:12px 0;white-space:pre-line}
 .dn-i+.dn-i{border-top:1px solid var(--ln)}
+.fz{flex:none;display:flex;gap:6px}.fz[hidden]{display:none}
+.fz .ib{font-size:13px;font-weight:600;letter-spacing:-.3px}
+.ib:disabled{opacity:.35}
+#gear{display:grid;place-items:center;padding:0}#gear svg{width:18px;height:18px}
 /* ===== Kaldığım yer (Devam) kartı ===== */
 .rs{position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;width:100%;min-width:0;margin:0 0 10px;padding:12px 12px 12px 14px;text-align:left;color:var(--tx);border-radius:16px;border:1px solid var(--rs-bd);background:var(--rs-bg);box-shadow:var(--rs-sh),0 0 0 0 transparent;touch-action:manipulation;transition:transform .16s ease;animation:rsIn .45s cubic-bezier(.22,.9,.28,1) backwards}
 .rs::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--ac);opacity:0;z-index:0;pointer-events:none;transition:opacity .3s}
@@ -110,8 +114,8 @@ input{display:block;width:100%;max-width:100%;padding:11px 14px;border-radius:12
 </style>
 </head>
 <body>
-<header><div class="row"><button class="ib" id="bk" hidden>‹</button><h1 id="ttl">Kur'an Mealleri</h1><button class="ib" id="gear" aria-label="Görünüm">Aa</button></div>
-<div class="pn" id="pn"><span>Tema</span><span id="th"></span><button class="ab" data-ab="1">Hakkında</button><span style="margin-left:auto">Yazı</span><button id="fm">A−</button><button id="fp">A+</button></div>
+<header><div class="row"><button class="ib" id="bk" hidden>‹</button><h1 id="ttl">Kur'an Mealleri</h1><span class="fz" id="fz" hidden><button class="ib" id="fm" aria-label="Yazıyı küçült">A−</button><button class="ib" id="fp" aria-label="Yazıyı büyüt">A+</button></span><button class="ib" id="gear" aria-label="Tema ve Hakkında"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg></button></div>
+<div class="pn" id="pn"><span>Tema</span><span id="th"></span><button class="ab" data-ab="1">Hakkında</button></div>
 <div id="hx"></div></header>
 <main id="m"></main><div id="toast"></div>
 <div class="abp" id="abp"><button class="abp-bd" data-ab="0" aria-label="Kapat"></button><div class="abp-c" role="dialog" aria-label="Hakkında"><b>Hakkında</b><p>Yazılım ve Derleme<br>Murat BOSTANCI®<br>Ver <span id="ver">–</span> - 2026</p><button data-ab="0">Tamam</button></div></div>
@@ -128,14 +132,14 @@ const cnt=n=>Math.max(...D.meals.diyanet[n].v.map(x=>x[1]));
 function bars(){try{const c=getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();if(!/^#[0-9a-f]{6}$/i.test(c)||!window.AndroidTheme)return;const l=(parseInt(c.slice(1,3),16)+parseInt(c.slice(3,5),16)+parseInt(c.slice(5,7),16))/3>140;AndroidTheme.setBars(c,l)}catch(e){}}
 if(window.matchMedia)matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>bars());
 function theme(){document.documentElement.dataset.theme=S.theme;document.documentElement.style.setProperty('--f',S.fs+'px');document.documentElement.style.setProperty('--df',S.dfs+'px');
- $('th').innerHTML=[['auto','Oto'],['light','Açık'],['sepia','Sepya'],['dark','Koyu'],['amoled','Gece']].map(([k,l])=>`<button data-t="${k}" class="${S.theme==k?'on':''}">${l}</button>`).join('');bars()}
+ $('th').innerHTML=[['auto','Oto'],['light','Açık'],['sepia','Sepya'],['dark','Koyu'],['amoled','Gece']].map(([k,l])=>`<button data-t="${k}" class="${S.theme==k?'on':''}">${l}</button>`).join('');$('fm').disabled=S.fs<=15;$('fp').disabled=S.fs>=30;bars()}
 function meals(){return `<div class="sel"><small>Meal Seç</small><select id="ms">${[...D.info].sort((x,y)=>x[1].localeCompare(y[1],'tr')).map(([k,f])=>`<option value="${k}"${S.meal==k?' selected':''}>${f}</option>`).join('')}</select></div>`}
 let rsKey=null;
 function bmCard(){const B=S.bm[S.meal];if(!B){rsKey='';return ''}
  const nm=D.names[B.s][0],tot=Math.max(cnt(B.s),B.a),p=Math.max(.04,Math.min(1,B.a/tot)),key=S.meal+':'+B.s+'-'+B.a,fresh=rsKey!==null&&rsKey!==key;rsKey=key;
  return `<button class="rs${fresh?' fresh':''}" data-bs="${B.s}-${B.a}" aria-label="Kaldığım yer: ${nm}, ${B.a}. ayet. Devam et"><span class="rs-ic"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4.2L5 21V4a1 1 0 0 1 1-1z"/></svg></span><span class="rs-mid"><b>Kaldığım yer</b><small>${nm} · ${B.a}. ayet</small><span class="rs-pg"><span class="rs-bar"><i style="--p:${p.toFixed(3)}"></i></span><em>${B.a} / ${tot}</em></span></span><span class="rs-go">Devam<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></button>`}
 function home(){
- $('bk').hidden=true;$('m').className='';$('ttl').textContent="Kur'an Mealleri";
+ $('bk').hidden=true;$('fz').hidden=true;$('m').className='';$('ttl').textContent="Kur'an Mealleri";
  $('hx').innerHTML=`<div class="seg"><button data-o="mushaf" class="${S.order=='mushaf'?'on':''}">Mushaf sırası</button><button data-o="nuzul" class="${S.order=='nuzul'?'on':''}">Nüzul sırası</button></div>`+meals();
  $('m').innerHTML=bmCard()+`<input id="q" placeholder="Sure ara…" autocomplete="off" style="margin-top:4px"><div id="ls"></div>`;
  const draw=()=>{const q=$('q').value.toLocaleLowerCase('tr').trim();
@@ -144,7 +148,7 @@ function home(){
  $('q').oninput=draw;draw();scrollTo(0,0)}
 function read(n,v){
  const sd=D.meals[S.meal][n],o=ORD(),i=o.indexOf(n),nm=D.names[n],B=S.bm[S.meal];
- $('bk').hidden=false;$('m').className='rd';$('ttl').textContent=nm[0];$('hx').innerHTML=meals();
+ $('bk').hidden=false;$('fz').hidden=false;$('m').className='rd';$('ttl').textContent=nm[0];$('hx').innerHTML=meals();
  const vs=sd.v.map(([a,b,t,nn])=>{const m=t,f=nn||[];return `<p class="v" id="a${a}"><span class="vl"><button type="button" class="vn bm${B&&B.s==n&&B.a==a?' on':''}" data-b="${a}" data-n="${a==b?a:a+'–'+b}" aria-label="Kaldığım yer olarak işaretle: ${a==b?a:a+'–'+b}. ayet">${Array.from({length:b-a+1},(_,i)=>`<span>${a+i}</span>`).join('')}</button></span><span><span class="tx">${esc(m)}</span>${f.length?`<button type="button" class="dn" data-dn="${a}" aria-label="Dipnot${f.length>1?' ('+f.length+')':''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h6"/><path d="M8 13h8M8 17h5"/></svg><span>Dipnot</span></button>`:''}</span></p>`}).join('');
  $('m').innerHTML=`<div class="t"><h2>${nm[0]}</h2><p>${nm[1]?nm[1]+' · ':''}${cnt(n)} ayet · ${S.order=='nuzul'?'iniş sırası '+(i+1):'mushaf sırası '+n}</p></div>`
  +(sd.b?`<p class="bes">${esc(sd.b)}</p>`:'')+(vs||'<div class="emp">Bu sure, seçili mealin kaynak dosyasında bulunmuyor. Başka bir meal seçebilirsiniz.</div>')
