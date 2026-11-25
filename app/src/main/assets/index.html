@@ -44,7 +44,15 @@ input{display:block;width:100%;max-width:100%;padding:11px 14px;border-radius:12
 .v .tx{display:block;padding-right:4px;text-align:justify;text-justify:inter-word;-webkit-hyphens:auto;hyphens:auto;overflow-wrap:break-word}
 .v.hl{background-color:var(--ac2);background-size:calc(100% - 24px) 1px;border-radius:12px;margin-inline:-6px;width:calc(100% + 12px);max-width:calc(100% + 12px);padding:6px 6px 16px}
 .nav{display:flex;gap:10px;margin-top:auto;padding-top:30px}.nav button{flex:1;padding:13px;border-radius:14px;background:var(--card);border:1px solid var(--ln);color:var(--ac);font-weight:600}.nav button:disabled{opacity:.3}
-.pn{display:none;position:absolute;left:0;right:0;width:100%;top:100%;background:var(--bg);border-bottom:1px solid var(--ln);box-shadow:0 10px 18px #0003;padding:10px 16px 12px;gap:8px;flex-wrap:wrap;align-items:center;font-size:14px}.pn.open{display:flex}.pn button{padding:6px 12px;border-radius:10px;border:1px solid var(--ln);background:var(--card)}.pn .on{border-color:var(--ac);color:var(--ac);font-weight:600}
+.tw{position:relative;flex:none}
+.pn{display:none;position:absolute;top:calc(100% + 8px);right:0;z-index:20;min-width:150px;padding:6px;background:var(--card);border:1px solid var(--ln);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.35);transform-origin:top right}
+.pn.open{display:block;animation:pnIn .14s ease-out}
+.pn #th{display:flex;flex-direction:column;gap:2px}
+.pn button{display:flex;align-items:center;justify-content:space-between;gap:18px;width:100%;padding:10px 12px;border:0;border-radius:10px;background:transparent;color:var(--tx);font-size:14px;text-align:left}
+.pn button:active{background:var(--ac2)}
+.pn .on{background:var(--ac2);color:var(--ac);font-weight:600}
+.pn .on::after{content:"\2713";font-size:13px}
+@keyframes pnIn{from{opacity:0;transform:translateY(-4px) scale(.97)}}
 .emp{text-align:center;color:var(--mu);padding:40px 10px}
 .sel{width:100%;max-width:720px;min-width:0;margin:6px auto 0}.sel small{display:block;font:600 11px Comfortaa,system-ui,sans-serif;color:var(--mu);margin-bottom:3px}
 .sel select{display:block;width:100%;max-width:100%;min-width:0;text-overflow:ellipsis;appearance:none;-webkit-appearance:none;padding:7px 40px 7px 14px;border-radius:12px;border:1px solid var(--ln);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10' fill='none' stroke='%238a9a96' stroke-width='2'%3E%3Cpath d='M1 1l7 7 7-7'/%3E%3C/svg%3E") no-repeat right 14px center;color:var(--tx);font:400 16px Comfortaa,system-ui,sans-serif}
@@ -54,7 +62,6 @@ input{display:block;width:100%;max-width:100%;padding:11px 14px;border-radius:12
 .dn{display:flex;align-items:center;gap:3px;width:max-content;max-width:100%;margin-top:6px;padding:3px 9px 3px 7px;border-radius:999px;border:1px solid var(--ln);background:var(--ac2);color:var(--ac);font:600 12px/1 Comfortaa,system-ui,sans-serif;touch-action:manipulation}
 .dn svg{flex:none;width:14px;height:14px}
 .dn:active{opacity:.65}
-.pn .ab{padding:4px 12px;border-radius:999px;background:var(--ac2);color:var(--ac);font:600 12px/1.4 Comfortaa,system-ui,sans-serif;touch-action:manipulation}
 .abp{position:fixed;inset:0;z-index:50;display:grid;place-items:center;visibility:hidden;opacity:0;transition:opacity .2s,visibility 0s linear .2s}
 .abp.open{visibility:visible;opacity:1;transition-delay:0s}
 .abp-bd{position:absolute;inset:0;width:100%;height:100%;padding:0;border:0;border-radius:0;background:rgba(0,0,0,.5)}
@@ -83,7 +90,7 @@ input{display:block;width:100%;max-width:100%;padding:11px 14px;border-radius:12
 .fz{flex:none;display:flex;gap:6px}.fz[hidden]{display:none}
 .fz .ib{font-size:13px;font-weight:600;letter-spacing:-.3px}
 .ib:disabled{opacity:.35}
-#gear{display:grid;place-items:center;padding:0}#gear svg{width:18px;height:18px}
+#gear,#inf{display:grid;place-items:center;padding:0}#gear svg,#inf svg{width:18px;height:18px}
 /* ===== Kaldığım yer (Devam) kartı ===== */
 .rs{position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;width:100%;min-width:0;margin:0 0 10px;padding:12px 12px 12px 14px;text-align:left;color:var(--tx);border-radius:16px;border:1px solid var(--rs-bd);background:var(--rs-bg);box-shadow:var(--rs-sh),0 0 0 0 transparent;touch-action:manipulation;transition:transform .16s ease;animation:rsIn .45s cubic-bezier(.22,.9,.28,1) backwards}
 .rs::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--ac);opacity:0;z-index:0;pointer-events:none;transition:opacity .3s}
@@ -114,8 +121,7 @@ input{display:block;width:100%;max-width:100%;padding:11px 14px;border-radius:12
 </style>
 </head>
 <body>
-<header><div class="row"><button class="ib" id="bk" hidden>‹</button><h1 id="ttl">Kur'an Mealleri</h1><span class="fz" id="fz" hidden><button class="ib" id="fm" aria-label="Yazıyı küçült">A−</button><button class="ib" id="fp" aria-label="Yazıyı büyüt">A+</button></span><button class="ib" id="gear" aria-label="Tema ve Hakkında"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg></button></div>
-<div class="pn" id="pn"><span>Tema</span><span id="th"></span><button class="ab" data-ab="1">Hakkında</button></div>
+<header><div class="row"><button class="ib" id="bk" hidden>‹</button><h1 id="ttl">Kur'an Mealleri</h1><span class="fz" id="fz" hidden><button class="ib" id="fm" aria-label="Yazıyı küçült">A−</button><button class="ib" id="fp" aria-label="Yazıyı büyüt">A+</button></span><button class="ib" id="inf" data-ab="1" aria-label="Hakkında"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6h.01" stroke-width="2.6"/></svg></button><span class="tw"><button class="ib" id="gear" aria-label="Tema" aria-haspopup="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v18a9 9 0 0 0 0-18z" fill="currentColor"/></svg></button><div class="pn" id="pn" role="menu" aria-label="Tema"><span id="th"></span></div></span></div>
 <div id="hx"></div></header>
 <main id="m"></main><div id="toast"></div>
 <div class="abp" id="abp"><button class="abp-bd" data-ab="0" aria-label="Kapat"></button><div class="abp-c" role="dialog" aria-label="Hakkında"><b>Hakkında</b><p>Yazılım ve Derleme<br>Murat BOSTANCI®<br>Ver <span id="ver">–</span> - 2026</p><button data-ab="0">Tamam</button></div></div>
@@ -161,11 +167,11 @@ const go=n=>{location.hash='s'+n};
 function route(){if(dnOpen)closeDn(true);const m=/^#s(\d+)(?:-(\d+))?/.exec(location.hash);if(m&&D.names[+m[1]]){S.last=+m[1];save();read(+m[1],m[2]&&+m[2])}else home()}
 function cp(s){try{const a=document.createElement('textarea');a.value=s;a.style.cssText='position:fixed;opacity:0';document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('Ayet kopyalandı')}catch(x){}}
 function toast(t){const e=$('toast');e.textContent=t;e.style.opacity=1;setTimeout(()=>e.style.opacity=0,1400)}
-document.addEventListener('click',e=>{if(e.target.closest('main')&&$('pn').classList.contains('open')){$('pn').classList.remove('open');return}const b=e.target.closest('button,.v');if(!b)return;const d=b.dataset||{};
+document.addEventListener('click',e=>{const pn=$('pn');if(pn.classList.contains('open')&&!e.target.closest('#pn,#gear')){pn.classList.remove('open');if(e.target.closest('main'))return}const b=e.target.closest('button,.v');if(!b)return;const d=b.dataset||{};
  if(d.s)go(d.s);else if(d.o){S.order=d.o;save();home()}else if(d.m){S.meal=d.m;save();route()}
- else if(d.t){S.theme=d.t;save();theme()}
+ else if(d.t){S.theme=d.t;save();theme();$('pn').classList.remove('open')}
  else if(d.bs)location.hash='s'+d.bs
- else if(d.ab!==undefined)$('abp').classList.toggle('open',d.ab=='1')
+ else if(d.ab!==undefined){$('pn').classList.remove('open');$('abp').classList.toggle('open',d.ab=='1')}
  else if(d.dn)openDn(+d.dn)
  else if(b.id=='dnx')closeDn()
  else if(b.id=='dfm'||b.id=='dfp'){S.dfs=Math.min(30,Math.max(12,(S.dfs||18)+(b.id=='dfp'?1:-1)));save();theme()}
@@ -174,7 +180,8 @@ document.addEventListener('click',e=>{if(e.target.closest('main')&&$('pn').class
  else if(b.id=='fm'||b.id=='fp'){ig=Date.now()+900;const dl=b.id=='fp'?1:-1;if(view=='home')S.lo=LO(S.lo+dl);else S.fs=Math.min(30,Math.max(15,S.fs+dl));save();theme()}
  else if(b.classList.contains('v')){const t=b.querySelector('.tx').textContent,n=b.querySelector('.vn').dataset.n;
   cp(`${D.names[S.last][0]} ${n} — ${t}`)}});
-let oy=0,ig=0;addEventListener('scroll',()=>{if(scrollX)scrollTo(0,scrollY);if(Date.now()<ig){oy=scrollY;return}if(Math.abs(scrollY-oy)>80)$('pn').classList.remove('open')},{passive:true});
+addEventListener('keydown',e=>{if(e.key=='Escape')$('pn').classList.remove('open')});
+let oy=0,ig=0;addEventListener('scroll',()=>{if(scrollX)scrollTo(0,scrollY);if(Date.now()<ig){oy=scrollY;return}if(Math.abs(scrollY-oy)>6)$('pn').classList.remove('open')},{passive:true});
 addEventListener('change',e=>{if(e.target.id=='ms'){S.meal=e.target.value;save();route()}});
 
 /* Uzun basmayla metin seçimi / bağlam menüsü kapalı (yalnızca yazılabilir alanlar hariç) */
