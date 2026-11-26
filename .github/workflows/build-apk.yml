@@ -6,13 +6,16 @@ on:
   pull_request:
     branches: [ "main" ]
   schedule:
-    # Her gün gece 03:00'te (UTC / Türkiye saati 06:00) 24 saati geçmiş sürümleri kontrol edip siler
     - cron: '0 3 * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
   actions: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build-and-clean:
@@ -26,16 +29,14 @@ jobs:
       with:
         persist-credentials: true
 
-    - name: Kalıcı +1 Sürüm Artır ve Kaydet
+    - name: Sürüm Numarasını Hesapla ve Güncelle
       id: version
       if: github.event_name != 'schedule' && github.event_name != 'pull_request'
       run: |
-        # 1. versionCode değerini +1 artırır
         CURRENT_CODE=$(grep -oE 'versionCode[ =]+[0-9]+' app/build.gradle | grep -oE '[0-9]+' | head -n 1)
         NEW_CODE=$((CURRENT_CODE + 1))
         sed -i -E "s/(versionCode[ =]+)[0-9]+/\1$NEW_CODE/" app/build.gradle
 
-        # 2. versionName son hanesini +1 artırır (2.10 -> 2.11 -> 2.12)
         CURRENT_NAME=$(grep -oE "versionName[ =]+['\"][^'\"]+['\"]" app/build.gradle | sed -E "s/.*['\"]([^'\"]+)['\"].*/\1/" | head -n 1)
         PREFIX=$(echo "$CURRENT_NAME" | sed -E 's/[0-9]+$//')
         LAST_NUM=$(echo "$CURRENT_NAME" | grep -oE '[0-9]+$')
@@ -45,13 +46,6 @@ jobs:
 
         echo "Yeni Sürüm -> versionCode: $NEW_CODE | versionName: $NEW_NAME"
         echo "new_name=$NEW_NAME" >> $GITHUB_OUTPUT
-
-        # 3. Yeni sürümü depoya kalıcı olarak kaydeder
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add app/build.gradle
-        git commit -m "Sürüm otomatik artırıldı: $NEW_NAME [skip ci]"
-        git push
 
     - name: Set up JDK 17
       if: github.event_name != 'schedule'
@@ -68,7 +62,6 @@ jobs:
 
     - name: Create Safe Init Script
       if: github.event_name != 'schedule'
-      # RepositoriesMode engeline takılmamak için depoları settings düzeyinde enjekte ediyoruz
       run: |
         cat << 'EOF' > init.gradle
         settingsEvaluated { settings ->
@@ -85,7 +78,6 @@ jobs:
                 }
             }
         }
-        
         allprojects {
             buildscript {
                 repositories {
@@ -121,39 +113,49 @@ jobs:
           --ks-key-alias "${{ secrets.ALIAS }}" \
           --ks-pass "pass:${{ secrets.KEY_STORE_PASSWORD }}" \
           --key-pass "pass:${{ secrets.KEY_PASSWORD }}" \
-          --out app-v${{ steps.version.outputs.new_name }}-release-signed.apk \
+          --out "Turkce-Kuran-v${{ steps.version.outputs.new_name }}.apk" \
           app-release-aligned.apk
+
+    - name: Yeni Sürümü Depoya Kaydet (Commit & Push)
+      id: git_push
+      if: github.event_name != 'schedule' && github.event_name != 'pull_request'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add app/build.gradle
+        git commit -m "Sürüm otomatik artırıldı: ${{ steps.version.outputs.new_name }} [skip ci]"
+        git push
+        echo "new_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
     - name: Release Signed APK
       if: github.event_name != 'schedule' && github.event_name != 'pull_request'
       uses: softprops/action-gh-release@v2
       with:
         tag_name: v${{ steps.version.outputs.new_name }}
-        target_commitish: ${{ github.ref_name }}
-        name: Release v${{ steps.version.outputs.new_name }}
-        files: app-v${{ steps.version.outputs.new_name }}-release-signed.apk
+        target_commitish: ${{ steps.git_push.outputs.new_sha }}
+        name: Turkce Kuran v${{ steps.version.outputs.new_name }}
+        files: Turkce-Kuran-v${{ steps.version.outputs.new_name }}.apk
         make_latest: true
 
     - name: 24 Saatten Eski Sürümleri, Tag'leri ve Önbellekleri Temizle
       if: always() && github.event_name != 'pull_request'
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        CURRENT_TAG: v${{ steps.version.outputs.new_name }}
       run: |
         CUTOFF=$(date -u -d '1 day ago' +%Y-%m-%dT%H:%M:%SZ)
+        LATEST_TAG=$(gh release view --repo "${{ github.repository }}" --json tagName --jq '.tagName' 2>/dev/null || echo "")
         echo "Kesim tarihi (UTC): $CUTOFF"
-        echo "Korunan güncel sürüm: $CURRENT_TAG"
+        echo "Korunan en güncel sürüm: $LATEST_TAG"
 
         gh cache list --repo "${{ github.repository }}" --limit 100 --json id --jq '.[].id' | while read -r CACHE_ID; do
           if [ -n "$CACHE_ID" ]; then
-            echo "Önbellek siliniyor: $CACHE_ID"
             gh cache delete "$CACHE_ID" --repo "${{ github.repository }}"
           fi
         done
 
         gh release list --repo "${{ github.repository }}" --limit 100 --json tagName,createdAt \
           --jq ".[] | select(.createdAt < \"$CUTOFF\") | .tagName" | while read -r TAG; do
-            if [ -n "$TAG" ] && [ "$TAG" != "$CURRENT_TAG" ]; then
+            if [ -n "$TAG" ] && [ "$TAG" != "$LATEST_TAG" ]; then
               echo "Siliniyor: $TAG"
               gh release delete "$TAG" --repo "${{ github.repository }}" --yes --cleanup-tag
             fi
